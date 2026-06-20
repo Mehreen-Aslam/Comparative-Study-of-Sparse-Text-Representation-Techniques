@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sparse Text Representations — A Comparative Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0E14;
+    --paper: #F5F3ED;
+    --paper-dim: #EAE7DD;
+    --blue: #5B7CFA;
+    --blue-dim: #E4E9FD;
+    --rust: #E8533D;
+    --rust-dim: #FBE2DD;
+    --caption: #8A8470;
+    --rule: #D9D4C5;
+    --ink-soft: #3A3D33;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* ---------- Top nav ---------- */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(245, 243, 237, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 40px;
+  }
+  .topnav .brand {
+    font-family: 'Spectral', serif; font-style: italic; font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .topnav .links { display: flex; gap: 28px; }
+  .topnav .links a {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-soft); text-decoration: none;
+    border-bottom: 1px solid transparent; padding-bottom: 3px;
+  }
+  .topnav .links a:hover { border-bottom-color: var(--blue); color: var(--blue); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 90px 40px 70px;
+    max-width: 1080px; margin: 0 auto;
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero .eyebrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue);
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: 'Spectral', serif; font-weight: 600; font-size: 3rem;
+    line-height: 1.08; margin: 0 0 22px; letter-spacing: -0.01em;
+    max-width: 760px;
+  }
+  .hero .lede {
+    font-family: 'Spectral', serif; font-size: 1.2rem; color: var(--ink-soft);
+    max-width: 640px; line-height: 1.6; margin-bottom: 32px;
+  }
+  .hero .byline {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--caption);
+  }
+
+  .hero-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--rule); border: 1px solid var(--rule); margin-top: 44px;
+  }
+  .hero-stat { background: var(--paper); padding: 20px 22px; }
+  .hero-stat .num { font-family: 'JetBrains Mono', monospace; font-size: 1.7rem; font-weight: 700; color: var(--blue); }
+  .hero-stat .lbl { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--caption); margin-top: 6px; }
+
+  /* ---------- Section shell ---------- */
+  section.block { padding: 64px 40px; max-width: 1080px; margin: 0 auto; border-bottom: 1px solid var(--rule); }
+  section.block:last-of-type { border-bottom: none; }
+  .block-head { margin-bottom: 36px; }
+  .block-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 10px; }
+  .block-title { font-family: 'Spectral', serif; font-weight: 600; font-size: 2rem; margin: 0 0 10px; }
+  .block-sub { font-family: 'Inter', sans-serif; font-size: 0.98rem; color: var(--ink-soft); max-width: 680px; line-height: 1.55; }
+
+  /* ---------- Findings cards ---------- */
+  .findings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-bottom: 40px; }
+  .finding-card { background: var(--paper); padding: 24px 22px; }
+  .finding-card .n { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--blue); margin-bottom: 10px; }
+  .finding-card p { font-family: 'Inter', sans-serif; font-size: 0.88rem; line-height: 1.5; margin: 0; color: var(--ink-soft); }
+  .finding-card strong { color: var(--ink); }
+  @media (max-width: 800px) { .findings-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- Bar chart (avg accuracy summary) ---------- */
+  .chart-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+  .chart-row .chart-label { width: 190px; flex-shrink: 0; color: var(--ink-soft); }
+  .chart-row .chart-track { flex: 1; height: 22px; background: var(--paper-dim); position: relative; }
+  .chart-row .chart-fill { height: 100%; background: var(--blue); }
+  .chart-row .chart-value { width: 60px; text-align: right; flex-shrink: 0; font-weight: 600; }
+  .chart-block { margin-bottom: 36px; }
+  .chart-block-title { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--caption); margin-bottom: 14px; }
+
+  /* ---------- Results table ---------- */
+  .table-controls { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .table-controls select {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    padding: 8px 12px; border: 1px solid var(--rule); background: var(--paper);
+    color: var(--ink); cursor: pointer;
+  }
+  table.results-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+  table.results-table th {
+    text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--ink);
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--caption);
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  table.results-table th:hover { color: var(--blue); }
+  table.results-table td { padding: 9px 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  table.results-table tr:hover td { background: var(--paper-dim); }
+  .acc-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .acc-bar-track { width: 70px; height: 8px; background: var(--paper-dim); }
+  .acc-bar-fill { height: 100%; background: var(--blue); }
+  .acc-bar-fill.weak { background: var(--rust); }
+
+  /* ---------- Live demo ---------- */
+  .demo-shell { border: 1px solid var(--rule); background: var(--ink); color: var(--paper); }
+  .demo-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #2A2D38; }
+  .demo-header .dot-row { display: flex; gap: 6px; }
+  .demo-header .dot { width: 9px; height: 9px; border-radius: 50%; background: #3A3D4A; }
+  .demo-header select {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    background: #1A1D28; color: var(--paper); border: 1px solid #2A2D38;
+    padding: 6px 10px;
+  }
+  .demo-body { padding: 24px 20px; }
+  .demo-body textarea {
+    width: 100%; min-height: 110px; background: #11141E; color: var(--paper);
+    border: 1px solid #2A2D38; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    padding: 14px; resize: vertical; line-height: 1.5;
+  }
+  .demo-body textarea:focus { outline: 1px solid var(--blue); }
+  .demo-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #6A6D7A; margin-top: 8px; }
+  .demo-run-btn {
+    margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    background: var(--blue); color: var(--ink); border: none; padding: 11px 24px; cursor: pointer;
+  }
+  .demo-run-btn:hover { background: #7B97FF; }
+  .demo-run-btn:disabled { background: #3A3D4A; color: #6A6D7A; cursor: not-allowed; }
+
+  .demo-results { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #2A2D38; }
+  @media (max-width: 800px) { .demo-results { grid-template-columns: 1fr; } }
+  .demo-result-cell { background: #161924; padding: 16px 18px; }
+  .demo-result-cell .combo-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #7A7D8A; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+  .demo-result-cell .pred { font-family: 'Spectral', serif; font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
+  .demo-result-cell .pred.spam, .demo-result-cell .pred.negative { color: var(--rust); }
+  .demo-result-cell .pred.ham, .demo-result-cell .pred.positive { color: #6FE3A0; }
+  .demo-result-cell .conf-bar-track { width: 100%; height: 5px; background: #2A2D38; margin-top: 8px; }
+  .demo-result-cell .conf-bar-fill { height: 100%; background: var(--blue); }
+  .demo-result-cell .conf-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #7A7D8A; margin-top: 6px; }
+
+  .sample-chips { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .sample-chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    background: #1A1D28; color: #9A9DAA; border: 1px solid #2A2D38;
+    padding: 5px 10px; cursor: pointer;
+  }
+  .sample-chip:hover { border-color: var(--blue); color: var(--paper); }
+
+  /* ---------- AI Detector section ---------- */
+  .detect-grid { display: grid; grid-template-columns: 1fr 280px; gap: 28px; }
+  @media (max-width: 800px) { .detect-grid { grid-template-columns: 1fr; } }
+  .detect-grid textarea {
+    width: 100%; min-height: 160px; font-family: 'Spectral', serif; font-size: 1rem;
+    border: 1px solid var(--rule); background: #fff; padding: 16px; resize: vertical; line-height: 1.55;
+  }
+  .detect-verdict { border: 1px solid var(--rule); padding: 20px; }
+  .detect-verdict .score { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 700; }
+  .detect-verdict .score.ai { color: var(--rust); }
+  .detect-verdict .score.human { color: #3D7A4C; }
+  .detect-verdict .score.mixed { color: #B8862E; }
+  .detect-verdict .label { font-family: 'Spectral', serif; font-style: italic; margin-top: 4px; }
+  .signal-line { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  .signal-line:last-child { border: none; }
+  .detect-disclaimer { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--caption); margin-top: 14px; line-height: 1.5; border-left: 2px solid var(--rule); padding-left: 10px; }
+
+  .loading-text { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--caption); padding: 16px 0; }
+  .error-text { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--rust); padding: 10px 0; }
+
+  .api-config { padding: 20px 40px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--caption); max-width: 1080px; margin: 0 auto; }
+  .api-config input { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 5px 8px; width: 260px; border: 1px solid var(--rule); }
+
+  footer { text-align: center; padding: 30px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--caption); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand">Sparse Representations Study</div>
+  <div class="links">
+    <a href="#findings">Findings</a>
+    <a href="#results">Full Results</a>
+    <a href="#demo">Live Demo</a>
+    <a href="#detector">AI Detector</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">Comparative NLP Study · 75 Experimental Conditions</div>
+  <h1>Bag-of-Words vs. TF-IDF, across five classifiers and three benchmark corpora.</h1>
+  <p class="lede">A systematic, factorial comparison of sparse text representations — measuring which feature-extraction and classifier pairings actually win, and why, across multi-class topic classification, binary sentiment analysis, and short-text spam detection.</p>
+  <p class="byline">Mehreen Aslam · MSAIS001</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">75</div><div class="lbl">Conditions tested</div></div>
+    <div class="hero-stat"><div class="num">3</div><div class="lbl">Representations</div></div>
+    <div class="hero-stat"><div class="num">5</div><div class="lbl">Classifiers</div></div>
+    <div class="hero-stat"><div class="num">3</div><div class="lbl">Benchmark corpora</div></div>
+  </div>
+</section>
+
+<section class="block" id="findings">
+  <div class="block-head">
+    <div class="block-eyebrow">01 · Key Findings</div>
+    <h2 class="block-title">What actually wins, and by how much</h2>
+    <p class="block-sub">Five patterns hold robustly across all three datasets in the paper's full experiments.</p>
+  </div>
+
+  <div class="findings-grid">
+    <div class="finding-card"><div class="n">FINDING A</div><p><strong>TF-IDF beats Bag-of-Words</strong> by 3–8 percentage points across every classifier and dataset tested — the inverse-document-frequency weighting consistently earns its keep.</p></div>
+    <div class="finding-card"><div class="n">FINDING B</div><p><strong>Logistic Regression</strong> is the most reliable top performer, landing at or within 0.3 points of the best score in nearly every condition, while training in under 20 seconds.</p></div>
+    <div class="finding-card"><div class="n">FINDING C</div><p><strong>Bigram augmentation</strong> adds less than 1% accuracy while costing 2–3× the training time — rarely worth it outside negation-sensitive tasks.</p></div>
+    <div class="finding-card"><div class="n">FINDING D</div><p><strong>kNN collapses</strong> on high-dimensional sparse vectors regardless of distance metric — the curse of dimensionality in action.</p></div>
+    <div class="finding-card"><div class="n">FINDING E</div><p><strong>Naive Bayes</strong> trades a small accuracy gap for a large speed advantage — a strong lightweight default when training time matters.</p></div>
+    <div class="finding-card"><div class="n">FINDING F</div><p>The numbers below are from a <strong>live-trained reproduction</strong> on subsampled data (for fast loading) — the relative rankings match the paper; absolute scores will differ slightly from the full-dataset results.</p></div>
+  </div>
+
+  <div class="chart-block">
+    <div class="chart-block-title">Average accuracy by representation</div>
+    <div id="rep-chart"></div>
+  </div>
+  <div class="chart-block">
+    <div class="chart-block-title">Average accuracy by classifier</div>
+    <div id="clf-chart"></div>
+  </div>
+</section>
+
+<section class="block" id="results">
+  <div class="block-head">
+    <div class="block-eyebrow">02 · Full Results</div>
+    <h2 class="block-title">All 45 trained conditions</h2>
+    <p class="block-sub">Every representation × classifier × dataset combination, trained fresh for this demo on subsampled data. Click a column header to sort.</p>
+  </div>
+
+  <div class="table-controls">
+    <select id="filter-dataset">
+      <option value="">All datasets</option>
+      <option value="sms">SMS Spam</option>
+      <option value="imdb">IMDB Sentiment</option>
+      <option value="newsgroups">20 Newsgroups</option>
+    </select>
+    <select id="filter-rep">
+      <option value="">All representations</option>
+      <option value="bow">Bag-of-Words</option>
+      <option value="tfidf">TF-IDF</option>
+      <option value="tfidf_bigram">TF-IDF + Bigrams</option>
+    </select>
+  </div>
+
+  <div id="results-table-container"><div class="loading-text">Loading results...</div></div>
+</section>
+
+<section class="block" id="demo">
+  <div class="block-head">
+    <div class="block-eyebrow">03 · Live Demo</div>
+    <h2 class="block-title">Try it on your own text</h2>
+    <p class="block-sub">Pick a task, type anything, and watch all nine representation × classifier combinations classify it in real time, side by side.</p>
+  </div>
+
+  <div class="demo-shell">
+    <div class="demo-header">
+      <div class="dot-row"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <select id="demo-dataset">
+        <option value="sms">SMS Spam Detection</option>
+        <option value="imdb">IMDB Sentiment</option>
+        <option value="newsgroups">20 Newsgroups Topics</option>
+      </select>
+    </div>
+    <div class="demo-body">
+      <textarea id="demo-text" placeholder="Type or paste text to classify..."></textarea>
+      <div class="sample-chips" id="sample-chips"></div>
+      <div><button class="demo-run-btn" id="demo-run-btn">Run classification</button></div>
+      <div id="demo-results-container"></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="detector">
+  <div class="block-head">
+    <div class="block-eyebrow">04 · Bonus Tool</div>
+    <h2 class="block-title">Heuristic AI-text detector</h2>
+    <p class="block-sub">A separate tool estimating whether a passage looks AI-written, using writing-pattern signals rather than a trained classifier. Useful as a contrast to the supervised models above — this one runs on hand-built features, no training data at all.</p>
+  </div>
+
+  <div class="detect-grid">
+    <div>
+      <textarea id="detect-text" placeholder="Paste a passage (at least ~30 words) to analyze..."></textarea>
+      <div><button class="demo-run-btn" id="detect-run-btn" style="background:var(--ink); color:var(--paper); margin-top:14px;">Analyze text</button></div>
+      <div id="detect-result-extra"></div>
+    </div>
+    <div id="detect-verdict-container">
+      <div class="detect-verdict">
+        <div class="loading-text" style="padding:0;">Run an analysis to see results.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="api-config">
+  API base URL: <input type="text" id="api-base" value="http://localhost:8000">
+</div>
+
+<footer>Sparse Representations Study — Mehreen Aslam, MSAIS001 — demo dashboard</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
